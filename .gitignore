@@ -1,3 +1,7 @@
 .idea
 reverse-proxy/nginx/*
 !reverse-proxy/nginx/default.conf
+database/postgres/*
+!database/postgres/postgresql.conf.example
+database/redis/*
+!database/redis/redis.conf.example
