@@ -1,3 +1,3 @@
 .idea
-nginx/*
-!nginx/default.conf
+reverse-proxy/nginx/*
+!reverse-proxy/nginx/default.conf
