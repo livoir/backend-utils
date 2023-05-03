@@ -22,12 +22,27 @@ processors:
   batch:
   spanmetrics:
     metrics_exporter: prometheus
+  tail_sampling:
+    decision_wait: 5s
+    policies:
+      [
+        {
+          name: errors-policy,
+          type: status_code,
+          status_code: { status_codes: [ERROR] },
+        },
+        {
+          name: randomized-policy,
+          type: probabilistic,
+          probabilistic: { sampling_percentage: 25 },
+        },
+      ]
 
 service:
   pipelines:
     traces:
       receivers: [jaeger]
-      processors: [spanmetrics, batch]
+      processors: [tail_sampling, spanmetrics]
       exporters: [jaeger]
     metrics/spanmetrics:
       receivers: [otlp/spanmetrics]
