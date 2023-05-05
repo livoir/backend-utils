@@ -5,3 +5,4 @@ database/postgres/*
 !database/postgres/postgresql.conf.example
 database/redis/*
 !database/redis/redis.conf.example
+.env
