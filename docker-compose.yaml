@@ -92,3 +92,14 @@ services:
       - "./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml"
     ports:
       - "9090:9090"
+
+  grafana:
+    networks:
+      - observability
+    image: grafana/grafana
+    container_name: grafana
+    restart: unless-stopped
+    volumes:
+      - "./observability/grafana:/var/lib/grafana"
+    ports:
+      - "3000:3000"
