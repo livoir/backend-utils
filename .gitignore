@@ -6,3 +6,4 @@ database/postgres/*
 database/redis/*
 !database/redis/redis.conf.example
 .env
+observability/grafana

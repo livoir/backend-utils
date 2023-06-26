@@ -1,5 +1,7 @@
 version: '3.8'
 
+name: backend
+
 networks:
   reverse-proxy:
     name: reverse-proxy
@@ -10,10 +12,11 @@ networks:
 
 services:
   postgres:
-    image: postgres:15.2-alpine
+    image: postgres:15-alpine
     container_name: postgres
     networks:
       - backend-api
+      - observability
     restart: unless-stopped
     environment:
       - POSTGRES_PASSWORD=${PG_PASSWORD}
@@ -67,12 +70,12 @@ services:
       - "16686:16686"
       - "16685:16685"
 
-  otel_collector:
+  otel-collector:
     networks:
       - observability
       - backend-api
     image: otel/opentelemetry-collector-contrib:latest
-    container_name: otel_collector
+    container_name: otel-collector
     volumes:
       - "./observability/otel-collector/otel-collector-config.yml:/etc/otelcol/otel-collector-collector-config.yml"
     command: --config /etc/otelcol/otel-collector-collector-config.yml
@@ -85,7 +88,7 @@ services:
   prometheus:
     networks:
       - observability
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.45.0
     container_name: prometheus
     restart: unless-stopped
     volumes:
@@ -96,10 +99,42 @@ services:
   grafana:
     networks:
       - observability
-    image: grafana/grafana
+    image: grafana/grafana:10.0.1
     container_name: grafana
     restart: unless-stopped
     volumes:
       - "./observability/grafana:/var/lib/grafana"
     ports:
-      - "3000:3000"
+      - "3001:3000"
+
+
+  postgres-exporter:
+    networks:
+      - observability
+    image: prometheuscommunity/postgres-exporter:v0.12.1
+    container_name: postgresql-exporter
+    restart: unless-stopped
+    environment:
+      - DATA_SOURCE_NAME=${PG_EXPORTER_DATA_SOURCE}
+    env_file:
+      - .env
+
+  loki:
+    networks:
+      - observability
+    image: grafana/loki:main
+    container_name: loki
+    restart: unless-stopped
+
+  promtail:
+    networks:
+      - observability
+    image: grafana/promtail:main
+    container_name: promtail
+    restart: unless-stopped
+    volumes:
+      - ./observability/promtail/promtail-config.yaml:/etc/promtail/config.yml
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers:/var/lib/docker/containers
+    env_file:
+      - .env
