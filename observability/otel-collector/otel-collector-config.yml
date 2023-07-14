@@ -1,13 +1,7 @@
 receivers:
-  jaeger:
-    protocols:
-      thrift_http:
-        endpoint: "0.0.0.0:14278"
-
-  otlp/spanmetrics:
+  otlp:
     protocols:
       grpc:
-        endpoint: "localhost:65535"
 
 exporters:
   prometheus:
@@ -41,9 +35,10 @@ processors:
 service:
   pipelines:
     traces:
-      receivers: [jaeger]
+      receivers: [otlp]
       processors: [tail_sampling, spanmetrics]
       exporters: [jaeger]
-    metrics/spanmetrics:
-      receivers: [otlp/spanmetrics]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
       exporters: [prometheus]

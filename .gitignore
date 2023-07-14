@@ -7,3 +7,5 @@ database/redis/*
 !database/redis/redis.conf.example
 .env
 observability/grafana
+observability/alertmanager
+observability/prometheus/alert.rules.yml

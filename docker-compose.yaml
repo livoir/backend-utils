@@ -82,6 +82,8 @@ services:
     restart: unless-stopped
     ports:
       - "14278:14278"
+      - "8889:8889"
+      - "4317:4317"
     depends_on:
       - jaeger
 
@@ -93,6 +95,7 @@ services:
     restart: unless-stopped
     volumes:
       - "./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml"
+      - "./observability/prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml"
     ports:
       - "9090:9090"
 
@@ -105,7 +108,7 @@ services:
     volumes:
       - "./observability/grafana:/var/lib/grafana"
     ports:
-      - "3001:3000"
+      - "3000:3000"
 
 
   postgres-exporter:
@@ -138,3 +141,31 @@ services:
       - /var/lib/docker/containers:/var/lib/docker/containers
     env_file:
       - .env
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node_exporter
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    restart: unless-stopped
+    networks:
+      - observability
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+
+  alert-manager:
+    image: prom/alertmanager:latest
+    container_name: alert-manager
+    restart: unless-stopped
+    networks:
+      - observability
+    volumes:
+      - ./observability/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:latest

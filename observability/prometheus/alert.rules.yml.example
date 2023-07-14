@@ -1,0 +1,11 @@
+groups:
+  - name: alert.rules
+    rules:
+      - alert: Postgresql Down
+        expr: absent(pg_up) == 1
+        for: 1s
+        labels:
+          severity: "critical"
+        annotations:
+          summary: "postgresql is down"
+          description: "postgresql has been down."
