@@ -92,6 +92,7 @@ services:
   prometheus:
     networks:
       - observability
+      - reverse-proxy
     image: prom/prometheus:v2.45.0
     container_name: prometheus
     restart: unless-stopped
@@ -104,6 +105,7 @@ services:
   grafana:
     networks:
       - observability
+      - reverse-proxy
     image: grafana/grafana:10.0.1
     container_name: grafana
     restart: unless-stopped
@@ -156,9 +158,9 @@ services:
     networks:
       - observability
     volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
+      - /proc:/host/proc
+      - /sys:/host/sys
+      - /:/rootfs
 
   alert-manager:
     image: prom/alertmanager:latest
@@ -168,6 +170,3 @@ services:
       - observability
     volumes:
       - ./observability/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
-
-  nginx-exporter:
-    image: nginx/nginx-prometheus-exporter:latest
