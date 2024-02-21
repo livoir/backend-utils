@@ -12,7 +12,7 @@ networks:
 
 services:
   postgres:
-    image: postgres:15-alpine
+    image: ${PG_IMAGE}
     container_name: postgres
     networks:
       - backend-api
@@ -31,7 +31,7 @@ services:
       - .env
 
   redis:
-    image: redis:7.0-alpine
+    image: ${REDIS_IMAGE}
     container_name: redis
     command: redis-server /usr/local/etc/redis/redis.conf
     volumes:
