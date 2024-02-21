@@ -29,6 +29,12 @@ services:
       - "5432:5432"
     env_file:
       - .env
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "10"
+        labels: "postgres"
 
   redis:
     image: ${REDIS_IMAGE}
@@ -41,6 +47,12 @@ services:
       - "6379:6379"
     networks:
       - backend-api
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "10"
+        labels: "redis"
 
   nginx:
     image: nginx:1.24
