@@ -188,3 +188,21 @@ services:
     command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085
     ports:
       - "8085:8085"
+
+  keydb:
+    image: ${KEYDB_IMAGE}
+    container_name: keydb
+    command: keydb-server /etc/keydb/keydb.conf
+    volumes:
+      - ./database/keydb/keydb.conf:/etc/keydb/keydb.conf
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - backend-api
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "10"
+        labels: "keydb"

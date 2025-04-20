@@ -5,7 +5,10 @@ database/postgres/*
 !database/postgres/postgresql.conf.example
 database/redis/*
 !database/redis/redis.conf.example
+database/keydb/*
+!database/keydb/keydb.conf.example
 .env
 observability/grafana
 observability/alertmanager
 observability/prometheus/alert.rules.yml
+*.DS_Store
