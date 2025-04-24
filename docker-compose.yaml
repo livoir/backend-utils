@@ -210,6 +210,8 @@ services:
   tempo:
     image: grafana/tempo:latest
     container_name: tempo
+    volumes:
+      - ./tempo/data:/tmp/tempo
     restart: unless-stopped
     networks:
       - observability
