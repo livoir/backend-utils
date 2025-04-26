@@ -209,9 +209,11 @@ services:
 
   tempo:
     image: ${GRAFANA_TEMPO_IMAGE}
+    command: [--config.file=/etc/tempo/config.yaml]
     container_name: tempo
     volumes:
-      - ./tempo/data:/tmp/tempo
+      - ./observability/tempo/config.yaml:/etc/tempo/config.yaml
+      - ./observability/tempo/data:/tmp/tempo
     restart: unless-stopped
     networks:
       - observability
@@ -219,5 +221,3 @@ services:
       - "3200:3200" # Tempo UI/API
       - "4317:4317" # OTLP gRPC
       - "4318:4318" # OTLP HTTP
-      - "14268:14268" # Jaeger gRPC
-      - "9411:9411" # Zipkin

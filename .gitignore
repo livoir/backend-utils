@@ -12,3 +12,5 @@ observability/grafana
 observability/alertmanager
 observability/prometheus/alert.rules.yml
 *.DS_Store
+observability/tempo/*
+!observability/tempo/config.yaml.example
