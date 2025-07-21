@@ -221,3 +221,21 @@ services:
       - "3200:3200" # Tempo UI/API
       - "4317:4317" # OTLP gRPC
       - "4318:4318" # OTLP HTTP
+
+  minio:
+    image: minio/minio:RELEASE.2025-07-18T21-56-31Z
+    container_name: minio
+    restart: unless-stopped
+    networks:
+      - observability
+    volumes:
+      - ./observability/minio/data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    env_file:
+      - .env
