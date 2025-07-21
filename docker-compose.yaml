@@ -9,6 +9,8 @@ networks:
     name: observability
   backend-api:
     name: backend-api
+  storage:
+    name: storage
 
 services:
   postgres:
@@ -223,13 +225,13 @@ services:
       - "4318:4318" # OTLP HTTP
 
   minio:
-    image: minio/minio:RELEASE.2025-07-18T21-56-31Z
+    image: ${MINIO_IMAGE}
     container_name: minio
     restart: unless-stopped
     networks:
-      - observability
+      - storage
     volumes:
-      - ./observability/minio/data:/data
+      - ./storage/minio/data:/data
     ports:
       - "9000:9000"
       - "9001:9001"
