@@ -241,3 +241,44 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     env_file:
       - .env
+
+  nats:
+    image: ${NATS_IMAGE}
+    container_name: nats
+    restart: unless-stopped
+    networks:
+      - backend-api
+      - observability
+    ports:
+      - "4222:4222"  # Client connections
+      - "8222:8222"  # HTTP monitoring
+      - "6222:6222"  # Cluster connections
+    command: 
+      - "--config"
+      - "/etc/nats/nats-server.conf"
+    volumes:
+      - ./pubsub/nats/nats-server.conf:/etc/nats/nats-server.conf
+      - nats-data:/data
+    environment:
+      - NATS_ADMIN_USER=${NATS_ADMIN_USER}
+      - NATS_ADMIN_PASSWORD_HASH=${NATS_ADMIN_PASSWORD_HASH}
+      - NATS_BACKEND_USER=${NATS_BACKEND_USER}
+      - NATS_BACKEND_PASSWORD_HASH=${NATS_BACKEND_PASSWORD_HASH}
+      - NATS_WEB_USER=${NATS_WEB_USER}
+      - NATS_WEB_PASSWORD_HASH=${NATS_WEB_PASSWORD_HASH}
+      - NATS_ANALYTICS_USER=${NATS_ANALYTICS_USER}
+      - NATS_ANALYTICS_PASSWORD_HASH=${NATS_ANALYTICS_PASSWORD_HASH}
+      - NATS_CLUSTER_USER=${NATS_CLUSTER_USER}
+      - NATS_CLUSTER_PASSWORD=${NATS_CLUSTER_PASSWORD}
+    env_file:
+      - .env
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "10"
+        labels: "nats"
+
+volumes:
+  nats-data:
+    driver: local
