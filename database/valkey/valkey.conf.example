@@ -1,0 +1,52 @@
+# Valkey configuration file example.
+#
+# Valkey is a drop-in RESP-compatible cache server (Linux Foundation fork of
+# Redis), recommended by materia's `cache` package. It reads the redis.conf
+# format — start it with:
+#
+#   valkey-server /usr/local/etc/valkey/valkey.conf
+#
+# Full directives: https://valkey.io/docs/topics/config.html
+
+################################## NETWORK #####################################
+
+# Bind to all interfaces so other containers on the `backend-api` network can
+# reach this service (e.g. a materia app connecting via "valkey:6379").
+# Restrict in production and pair with requirepass / ACLs + TLS.
+bind 0.0.0.0 -::1
+protected-mode no
+port 6379
+
+tcp-backlog 511
+timeout 0
+tcp-keepalive 300
+
+################################# GENERAL ######################################
+
+daemonize no
+supervised no
+loglevel notice
+logfile ""
+
+databases 16
+
+################################ SNAPSHOTTING ##################################
+
+save 3600 1 300 100 60 10000
+stop-writes-on-bgsave-error yes
+rdbcompression yes
+rdbchecksum yes
+dbfilename dump.rdb
+dir ./
+
+############################## MEMORY MANAGEMENT ###############################
+
+# Hard memory cap — tune to your host. Without a limit Valkey will grow until
+# the kernel OOM-kills the container.
+# maxmemory 256mb
+# maxmemory-policy allkeys-lru
+
+################################### SECURITY ###################################
+
+# Set a password for anything beyond local dev.
+# requirepass changeme

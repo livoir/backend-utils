@@ -208,6 +208,24 @@ services:
         max-file: "10"
         labels: "keydb"
 
+  valkey:
+    image: ${VALKEY_IMAGE}
+    container_name: valkey
+    command: valkey-server /usr/local/etc/valkey/valkey.conf
+    volumes:
+      - ./database/valkey/valkey.conf:/usr/local/etc/valkey/valkey.conf
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - backend-api
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "10"
+        labels: "valkey"
+
   tempo:
     image: ${GRAFANA_TEMPO_IMAGE}
     command: [--config.file=/etc/tempo/config.yaml]

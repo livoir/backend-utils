@@ -11,6 +11,9 @@ database/redis/*
 database/keydb/*
 !database/keydb/keydb.conf.example
 
+database/valkey/*
+!database/valkey/valkey.conf.example
+
 .env
 
 observability/grafana
