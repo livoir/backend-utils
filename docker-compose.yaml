@@ -35,6 +35,12 @@ services:
       - "5432:5432"
     env_file:
       - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   redis:
     image: ${REDIS_IMAGE}
@@ -60,6 +66,13 @@ services:
       - "6379:6379"
     networks:
       - backend-api
+    environment:
+      - CACHE_PASSWORD
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$CACHE_PASSWORD ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   nginx:
     image: nginx:1.24
@@ -209,6 +222,13 @@ services:
       - "6379:6379"
     networks:
       - backend-api
+    environment:
+      - CACHE_PASSWORD
+    healthcheck:
+      test: ["CMD-SHELL", "keydb-cli -a $$CACHE_PASSWORD ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   valkey:
     image: ${VALKEY_IMAGE}
@@ -234,6 +254,13 @@ services:
       - "6379:6379"
     networks:
       - backend-api
+    environment:
+      - CACHE_PASSWORD
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli -a $$CACHE_PASSWORD ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   tempo:
     image: ${GRAFANA_TEMPO_IMAGE}
@@ -302,6 +329,12 @@ services:
       - NATS_CLUSTER_PASSWORD=${NATS_CLUSTER_PASSWORD}
     env_file:
       - .env
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8222/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 volumes:
   nats-data:
