@@ -1,6 +1,10 @@
-version: '3.8'
-
 name: backend
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "5m"
+    max-file: "10"
 
 networks:
   reverse-proxy:
@@ -20,6 +24,7 @@ services:
       - backend-api
       - observability
     restart: unless-stopped
+    logging: *default-logging
     environment:
       - POSTGRES_PASSWORD=${PG_PASSWORD}
       - POSTGRES_USER=${PG_USER}
@@ -30,12 +35,6 @@ services:
       - "5432:5432"
     env_file:
       - .env
-    logging:
-      driver: json-file
-      options:
-        max-size: "5m"
-        max-file: "10"
-        labels: "postgres"
 
   redis:
     image: ${REDIS_IMAGE}
@@ -44,16 +43,11 @@ services:
     volumes:
       - ./database/redis/redis.conf:/usr/local/etc/redis/redis.conf
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "6379:6379"
     networks:
       - backend-api
-    logging:
-      driver: json-file
-      options:
-        max-size: "5m"
-        max-file: "10"
-        labels: "redis"
 
   nginx:
     image: nginx:1.24
@@ -63,6 +57,7 @@ services:
     ports:
       - "80:80"
     restart: unless-stopped
+    logging: *default-logging
     networks:
       - reverse-proxy
 
@@ -75,6 +70,7 @@ services:
       - "./observability/jaeger/jaeger-ui.json:/etc/jaeger/jaeger-ui.json"
     command: --query.ui-config /etc/jaeger/jaeger-ui.json
     restart: unless-stopped
+    logging: *default-logging
     environment:
       - METRICS_STORAGE_TYPE=prometheus
       - PROMETHEUS_SERVER_URL=http://prometheus:9090
@@ -95,6 +91,7 @@ services:
       - "./observability/otel-collector/otel-collector-config.yml:/etc/otelcol/otel-collector-collector-config.yml"
     command: --config /etc/otelcol/otel-collector-collector-config.yml
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "14278:14278"
       - "8889:8889"
@@ -109,6 +106,7 @@ services:
     image: prom/prometheus:v2.45.0
     container_name: prometheus
     restart: unless-stopped
+    logging: *default-logging
     volumes:
       - "./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml"
       - "./observability/prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml"
@@ -122,11 +120,11 @@ services:
     image: grafana/grafana:10.0.1
     container_name: grafana
     restart: unless-stopped
+    logging: *default-logging
     volumes:
       - "./observability/grafana:/var/lib/grafana"
     ports:
       - "3000:3000"
-
 
   postgres-exporter:
     networks:
@@ -134,6 +132,7 @@ services:
     image: prometheuscommunity/postgres-exporter:v0.12.1
     container_name: postgresql-exporter
     restart: unless-stopped
+    logging: *default-logging
     environment:
       - DATA_SOURCE_NAME=${PG_EXPORTER_DATA_SOURCE}
     env_file:
@@ -145,6 +144,7 @@ services:
     image: grafana/loki:main
     container_name: loki
     restart: unless-stopped
+    logging: *default-logging
 
   promtail:
     networks:
@@ -152,6 +152,7 @@ services:
     image: grafana/promtail:main
     container_name: promtail
     restart: unless-stopped
+    logging: *default-logging
     volumes:
       - ./observability/promtail/promtail-config.yaml:/etc/promtail/config.yml
       - /var/run/docker.sock:/var/run/docker.sock
@@ -168,6 +169,7 @@ services:
       - '--path.sysfs=/host/sys'
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
     restart: unless-stopped
+    logging: *default-logging
     networks:
       - observability
     volumes:
@@ -179,6 +181,7 @@ services:
     image: prom/alertmanager:latest
     container_name: alert-manager
     restart: unless-stopped
+    logging: *default-logging
     networks:
       - observability
     volumes:
@@ -189,6 +192,8 @@ services:
     command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085
     ports:
       - "8085:8085"
+    restart: unless-stopped
+    logging: *default-logging
 
   keydb:
     image: ${KEYDB_IMAGE}
@@ -197,16 +202,11 @@ services:
     volumes:
       - ./database/keydb/keydb.conf:/etc/keydb/keydb.conf
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "6379:6379"
     networks:
       - backend-api
-    logging:
-      driver: json-file
-      options:
-        max-size: "5m"
-        max-file: "10"
-        labels: "keydb"
 
   valkey:
     image: ${VALKEY_IMAGE}
@@ -215,16 +215,11 @@ services:
     volumes:
       - ./database/valkey/valkey.conf:/usr/local/etc/valkey/valkey.conf
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "6379:6379"
     networks:
       - backend-api
-    logging:
-      driver: json-file
-      options:
-        max-size: "5m"
-        max-file: "10"
-        labels: "valkey"
 
   tempo:
     image: ${GRAFANA_TEMPO_IMAGE}
@@ -234,6 +229,7 @@ services:
       - ./observability/tempo/config.yaml:/etc/tempo/config.yaml
       - ./observability/tempo/data:/tmp/tempo
     restart: unless-stopped
+    logging: *default-logging
     networks:
       - observability
     ports:
@@ -246,6 +242,7 @@ services:
     image: ${MINIO_IMAGE}
     container_name: minio
     restart: unless-stopped
+    logging: *default-logging
     networks:
       - storage
     volumes:
@@ -264,6 +261,7 @@ services:
     image: ${NATS_IMAGE}
     container_name: nats
     restart: unless-stopped
+    logging: *default-logging
     networks:
       - backend-api
       - observability
@@ -290,12 +288,6 @@ services:
       - NATS_CLUSTER_PASSWORD=${NATS_CLUSTER_PASSWORD}
     env_file:
       - .env
-    logging:
-      driver: json-file
-      options:
-        max-size: "5m"
-        max-file: "10"
-        labels: "nats"
 
 volumes:
   nats-data:
