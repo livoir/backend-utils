@@ -152,7 +152,7 @@ services:
     networks:
       - observability
     image: prometheuscommunity/postgres-exporter:v0.12.1
-    container_name: postgresql-exporter
+    container_name: postgres-exporter
     restart: unless-stopped
     logging: *default-logging
     mem_limit: 256m
