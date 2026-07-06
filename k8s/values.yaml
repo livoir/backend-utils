@@ -1,0 +1,239 @@
+# =============================================================================
+# Umbrella chart values for the backend-utils stack on Kubernetes.
+#
+# Cross-service DNS assumes the release is installed with name `backend`
+# (`helm install backend ./k8s ...`), so sub-chart services resolve as
+# `backend-<chart>` (e.g. backend-loki, backend-tempo). If you use a different
+# release name, update the URLs in `promtail.config.clients` and
+# `otelCollector.config.exporters`.
+#
+# SECRET HANDLING: every value marked `# OVERRIDE in secrets.yaml` must be set
+# in a gitignored k8s/secrets.yaml (see secrets.yaml.example) and passed with
+# `-f k8s/secrets.yaml`. For real production, replace this with External Secrets
+# or SealedSecrets so no plaintext lands in values files.
+#
+# Chart value keys are version-specific (versions pinned in Chart.yaml). Always
+# verify rendered manifests with `helm template` before applying.
+# =============================================================================
+
+# StorageClass for all PVCs. bitnami charts consume `global.storageClass`
+# automatically; kube-prometheus-stack PVCs use the cluster default (null) below.
+# Set to e.g. gp2 / standard-rwo / local-path as needed.
+global:
+  storageClass: ""
+
+# --- Toggle each subsystem. Disabling a data service here removes it entirely. ---
+observability:
+  enabled: true
+loki:
+  enabled: true
+promtail:
+  enabled: true
+tempo:
+  enabled: true
+otelCollector:
+  enabled: true
+postgresql:
+  enabled: true
+valkey:
+  enabled: true
+nats:
+  enabled: true
+minio:
+  enabled: true
+
+# =============================================================================
+# Observability
+# =============================================================================
+
+# Prometheus + Grafana + Alertmanager + node-exporter (DaemonSet) + kube-state-metrics
+kube-prometheus-stack:
+  crds:
+    enabled: true
+  nodeExporter:
+    enabled: true              # runs as a DaemonSet scraping /proc + /sys on every node
+  alertmanager:
+    enabled: true
+  grafana:
+    adminPassword: "changeme"  # OVERRIDE in secrets.yaml
+    persistence:
+      enabled: true
+      size: 5Gi
+      storageClassName: null   # uses global default; set to narrow per chart if needed
+    resources:
+      requests: { memory: 256Mi }
+      limits:   { memory: 512Mi }
+  prometheus:
+    prometheusSpec:
+      retention: 15d
+      retentionSize: 10GB
+      enableFeatures: ["remote-write-receiver"]   # lets tempo metrics_generator push
+      resources:
+        requests: { memory: 512Mi }
+        limits:   { memory: 2Gi }
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: null
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests: { storage: 20Gi }
+      # Mirror the docker-compose scrape targets. Default jobs from this chart
+      # already cover kubelet/kube-state-metrics/node-exporter.
+      additionalScrapeConfigs:
+        - job_name: otel-collector
+          static_configs:
+            - targets: ["backend-opentelemetry-collector:8889"]
+
+# Loki — single-binary for sideproject scale. Use object storage (S3/GCS) in prod.
+loki:
+  deploymentMode: SingleBinary
+  loki:
+    auth_enabled: false
+    commonConfig:
+      replication_factor: 1
+    storage:
+      type: filesystem
+  singleBinary:
+    replicas: 1
+    persistence:
+      enabled: true
+      size: 10Gi
+    resources:
+      requests: { memory: 256Mi }
+      limits:   { memory: 1Gi }
+
+# Promtail — DaemonSet scraping /var/log/pods across the cluster.
+promtail:
+  config:
+    clients:
+      - url: http://backend-loki:3100/loki/api/v1/push
+
+# Tempo — trace backend with local-block persistence.
+tempo:
+  tempo:
+    storage:
+      trace:
+        backend: local
+        local:
+          path: /var/tempo/blocks
+        wal:
+          path: /var/tempo/wal
+  compactor:
+    compaction:
+      block_retention: 48h     # was 1h in docker-compose — too short to investigate
+  persistence:
+    enabled: true
+    size: 10Gi
+
+# OpenTelemetry Collector — receives OTLP, samples, exports traces to Tempo and
+# span-derived RED metrics to Prometheus. Mirrors observability/otel-collector/.
+otelCollector:
+  mode: deployment
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+    connectors:
+      spanmetrics:
+        dimensions_cache_size: 1000
+    processors:
+      batch: {}
+      tail_sampling:
+        decision_wait: 5s
+        policies:
+          - name: errors-policy
+            type: status_code
+            status_code:
+              status_codes: [ERROR]
+          - name: randomized-policy
+            type: probabilistic
+            probabilistic:
+              sampling_percentage: 25
+    exporters:
+      otlp/tempo:
+        endpoint: backend-tempo:4317
+        tls:
+          insecure: true
+      prometheus:
+        endpoint: 0.0.0.0:8889
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [tail_sampling, batch]
+          exporters: [spanmetrics, otlp/tempo]
+        metrics/spanmetrics:
+          receivers: [spanmetrics]
+          exporters: [prometheus]
+
+# =============================================================================
+# Data services
+# =============================================================================
+
+postgresql:
+  auth:
+    username: postgres
+    database: app
+    password: "changeme"       # OVERRIDE in secrets.yaml
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi
+    resources:
+      requests: { memory: 512Mi }
+      limits:   { memory: 1Gi }
+
+valkey:
+  architecture: standalone
+  auth:
+    enabled: true
+    password: "changeme"       # = CACHE_PASSWORD — OVERRIDE in secrets.yaml
+  # Mirrors the docker-compose cache hardening (CP7): memory cap, eviction, AOF.
+  commonConfiguration: |-
+    maxmemory 256mb
+    maxmemory-policy allkeys-lru
+    appendonly yes
+    appendfsync everysec
+  master:
+    persistence:
+      enabled: true
+      size: 8Gi
+    resources:
+      requests: { memory: 256Mi }
+      limits:   { memory: 512Mi }
+
+nats:
+  # JetStream enabled with a file-store PVC. Auth + the multi-account permission
+  # model (SYS/APP users from the docker-compose setup) is chart-specific and
+  # intentionally left minimal here — see README "NATS auth" to wire the full
+  # accounts config or a custom ConfigMap.
+  config:
+    jetstream:
+      enabled: true
+      store_dir: /data
+    max_payload: 1MB
+    max_connections: 1000
+  jetstream:
+    storage:
+      type: file
+      fileStore:
+        pvc:
+          size: 10Gi
+  resources:
+    limits:
+      memory: 2Gi
+
+minio:
+  mode: standalone            # set to `distributed` for HA in production
+  auth:
+    rootUser: "changeme"      # OVERRIDE in secrets.yaml
+    rootPassword: "changeme"  # OVERRIDE in secrets.yaml
+  persistence:
+    enabled: true
+    size: 20Gi
+  resources:
+    requests: { memory: 512Mi }
+    limits:   { memory: 1Gi }

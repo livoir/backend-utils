@@ -1,0 +1,6 @@
+# Helm dependency cache — resolved via `helm dependency update`
+charts/
+Chart.lock
+
+# Local secret overrides — NEVER commit
+secrets.yaml
