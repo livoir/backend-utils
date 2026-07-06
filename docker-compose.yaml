@@ -35,7 +35,7 @@ services:
       - POSTGRES_USER=${PG_USER}
       - PGDATA=/var/lib/postgresql/data
     volumes:
-      - "./database/postgres/data:/var/lib/postgresql/data"
+      - postgres-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     env_file:
@@ -305,7 +305,7 @@ services:
     container_name: tempo
     volumes:
       - ./observability/tempo/config.yaml:/etc/tempo/config.yaml
-      - ./observability/tempo/data:/tmp/tempo
+      - tempo-data:/tmp/tempo
     restart: unless-stopped
     logging: *default-logging
     mem_limit: 1g
@@ -328,7 +328,7 @@ services:
     networks:
       - storage
     volumes:
-      - ./storage/minio/data:/data
+      - minio-data:/data
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -381,4 +381,10 @@ services:
 
 volumes:
   nats-data:
+    driver: local
+  postgres-data:
+    driver: local
+  tempo-data:
+    driver: local
+  minio-data:
     driver: local
