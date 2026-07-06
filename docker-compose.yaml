@@ -119,7 +119,7 @@ services:
   loki:
     networks:
       - observability
-    image: grafana/loki:main
+    image: grafana/loki:3.7.3
     container_name: loki
     restart: unless-stopped
     logging: *default-logging
@@ -127,7 +127,7 @@ services:
   promtail:
     networks:
       - observability
-    image: grafana/promtail:main
+    image: grafana/promtail:3.6.11
     container_name: promtail
     restart: unless-stopped
     logging: *default-logging
@@ -139,7 +139,7 @@ services:
       - .env
 
   node-exporter:
-    image: prom/node-exporter:latest
+    image: prom/node-exporter:v1.11.1
     container_name: node_exporter
     command:
       - '--path.procfs=/host/proc'
@@ -156,7 +156,7 @@ services:
       - /:/rootfs
 
   alert-manager:
-    image: prom/alertmanager:latest
+    image: prom/alertmanager:v0.33.1
     container_name: alert-manager
     restart: unless-stopped
     logging: *default-logging
