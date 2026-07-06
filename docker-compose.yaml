@@ -49,7 +49,7 @@ services:
       - --maxmemory-policy
       - allkeys-lru
       - --appendonly
-      - yes
+      - "yes"
       - --appendfsync
       - everysec
     volumes:
@@ -198,7 +198,7 @@ services:
       - --maxmemory-policy
       - allkeys-lru
       - --appendonly
-      - yes
+      - "yes"
       - --appendfsync
       - everysec
     volumes:
@@ -223,7 +223,7 @@ services:
       - --maxmemory-policy
       - allkeys-lru
       - --appendonly
-      - yes
+      - "yes"
       - --appendfsync
       - everysec
     volumes:
