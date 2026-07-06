@@ -3,41 +3,42 @@ receivers:
     protocols:
       grpc:
 
+connectors:
+  spanmetrics:
+    dimensions_cache_size: 1000
+
+processors:
+  batch:
+  tail_sampling:
+    decision_wait: 5s
+    policies:
+      - name: errors-policy
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: randomized-policy
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 25
+
 exporters:
   prometheus:
     endpoint: "0.0.0.0:8889"
 
-  jaeger:
-    endpoint: "jaeger:14250"
+  otlp/tempo:
+    endpoint: "tempo:4317"
     tls:
       insecure: true
-
-processors:
-  batch:
-  spanmetrics:
-    metrics_exporter: prometheus
-  tail_sampling:
-    decision_wait: 5s
-    policies:
-      [
-        {
-          name: errors-policy,
-          type: status_code,
-          status_code: { status_codes: [ERROR] },
-        },
-        {
-          name: randomized-policy,
-          type: probabilistic,
-          probabilistic: { sampling_percentage: 25 },
-        },
-      ]
 
 service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [tail_sampling, spanmetrics]
-      exporters: [jaeger]
+      processors: [tail_sampling, batch]
+      exporters: [spanmetrics, otlp/tempo]
+    metrics/spanmetrics:
+      receivers: [spanmetrics]
+      exporters: [prometheus]
     metrics:
       receivers: [otlp]
       processors: [batch]
