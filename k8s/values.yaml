@@ -31,8 +31,6 @@ promtail:
   enabled: true
 tempo:
   enabled: true
-otelCollector:
-  enabled: true
 postgresql:
   enabled: true
 valkey:
@@ -88,8 +86,15 @@ kube-prometheus-stack:
 # Loki — single-binary for sideproject scale. Use object storage (S3/GCS) in prod.
 loki:
   deploymentMode: SingleBinary
+  backend:
+    replicas: 0                # disable SimpleScalable targets (chart defaults them to 3)
+  read:
+    replicas: 0
+  write:
+    replicas: 0
   loki:
     auth_enabled: false
+    useTestSchema: true        # quickstart schema; chart reads .Values.loki.useTestSchema. Define a real schema_config for production.
     commonConfig:
       replication_factor: 1
     storage:
@@ -128,8 +133,14 @@ tempo:
 
 # OpenTelemetry Collector — receives OTLP, samples, exports traces to Tempo and
 # span-derived RED metrics to Prometheus. Mirrors observability/otel-collector/.
-otelCollector:
+opentelemetry-collector:
+  enabled: true
   mode: deployment
+  # v0.162 of the chart dropped the default image — set it explicitly.
+  image:
+    repository: otel/opentelemetry-collector-contrib
+    tag: "0.154.0"
+    pullPolicy: IfNotPresent
   config:
     receivers:
       otlp:

@@ -36,7 +36,7 @@ dependencies:
   - name: opentelemetry-collector
     version: "0.162.0"
     repository: https://open-telemetry.github.io/opentelemetry-helm-charts
-    condition: otelCollector.enabled
+    condition: opentelemetry-collector.enabled
 
   # --- Data ---
   - name: postgresql
@@ -45,7 +45,7 @@ dependencies:
     condition: postgresql.enabled
 
   - name: valkey
-    version: "9.1.0"
+    version: "6.1.14"
     repository: https://charts.bitnami.com/bitnami
     condition: valkey.enabled
 
