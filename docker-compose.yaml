@@ -238,8 +238,9 @@ services:
       - observability
     ports:
       - "3200:3200" # Tempo UI/API
-      - "4317:4317" # OTLP gRPC
-      - "4318:4318" # OTLP HTTP
+      # OTLP receivers (4317/4318) stay container-internal: otel-collector forwards
+      # traces to tempo over the observability network. Publishing them would also
+      # collide with otel-collector's host port 4317.
 
   minio:
     image: ${MINIO_IMAGE}
