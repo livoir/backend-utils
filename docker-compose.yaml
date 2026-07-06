@@ -6,6 +6,9 @@ x-logging: &default-logging
     max-size: "5m"
     max-file: "10"
 
+x-security: &no-new-privs
+  - no-new-privileges:true
+
 networks:
   reverse-proxy:
     name: reverse-proxy
@@ -25,6 +28,8 @@ services:
       - observability
     restart: unless-stopped
     logging: *default-logging
+    mem_limit: 1g
+    security_opt: *no-new-privs
     environment:
       - POSTGRES_PASSWORD=${PG_PASSWORD}
       - POSTGRES_USER=${PG_USER}
@@ -62,6 +67,8 @@ services:
       - ./database/redis/redis.conf:/usr/local/etc/redis/redis.conf
     restart: unless-stopped
     logging: *default-logging
+    mem_limit: 512m
+    security_opt: *no-new-privs
     ports:
       - "6379:6379"
     networks:
@@ -83,6 +90,8 @@ services:
       - "80:80"
     restart: unless-stopped
     logging: *default-logging
+    mem_limit: 128m
+    security_opt: *no-new-privs
     networks:
       - reverse-proxy
 
@@ -97,6 +106,8 @@ services:
     command: --config /etc/otelcol/otel-collector-collector-config.yml
     restart: unless-stopped
     logging: *default-logging
+    mem_limit: 1g
+    security_opt: *no-new-privs
     ports:
       - "14278:14278"
       - "8889:8889"
@@ -110,6 +121,8 @@ services:
     container_name: prometheus
     restart: unless-stopped
     logging: *default-logging
+    mem_limit: 2g
+    security_opt: *no-new-privs
     volumes:
       - "./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml"
       - "./observability/prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml"
@@ -124,6 +137,8 @@ services:
     container_name: grafana
     restart: unless-stopped
     logging: *default-logging
+    mem_limit: 512m
+    security_opt: *no-new-privs
     volumes:
       - "./observability/grafana:/var/lib/grafana"
     ports:
@@ -136,6 +151,8 @@ services:
     container_name: postgresql-exporter
     restart: unless-stopped
     logging: *default-logging
+    mem_limit: 256m
+    security_opt: *no-new-privs
     environment:
       - DATA_SOURCE_NAME=${PG_EXPORTER_DATA_SOURCE}
     env_file:
@@ -148,6 +165,8 @@ services:
     container_name: loki
     restart: unless-stopped
     logging: *default-logging
+    mem_limit: 1g
+    security_opt: *no-new-privs
 
   promtail:
     networks:
@@ -156,6 +175,8 @@ services:
     container_name: promtail
     restart: unless-stopped
     logging: *default-logging
+    mem_limit: 512m
+    security_opt: *no-new-privs
     volumes:
       - ./observability/promtail/promtail-config.yaml:/etc/promtail/config.yml
       - /var/run/docker.sock:/var/run/docker.sock
@@ -173,6 +194,8 @@ services:
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
     restart: unless-stopped
     logging: *default-logging
+    mem_limit: 256m
+    security_opt: *no-new-privs
     networks:
       - observability
     volumes:
@@ -185,6 +208,8 @@ services:
     container_name: alert-manager
     restart: unless-stopped
     logging: *default-logging
+    mem_limit: 256m
+    security_opt: *no-new-privs
     networks:
       - observability
     volumes:
@@ -197,6 +222,8 @@ services:
       - "8085:8085"
     restart: unless-stopped
     logging: *default-logging
+    mem_limit: 1g
+    security_opt: *no-new-privs
 
   keydb:
     image: ${KEYDB_IMAGE}
@@ -218,6 +245,8 @@ services:
       - ./database/keydb/keydb.conf:/etc/keydb/keydb.conf
     restart: unless-stopped
     logging: *default-logging
+    mem_limit: 512m
+    security_opt: *no-new-privs
     ports:
       - "6379:6379"
     networks:
@@ -250,6 +279,8 @@ services:
       - ./database/valkey/valkey.conf:/usr/local/etc/valkey/valkey.conf
     restart: unless-stopped
     logging: *default-logging
+    mem_limit: 512m
+    security_opt: *no-new-privs
     ports:
       - "6379:6379"
     networks:
@@ -271,6 +302,8 @@ services:
       - ./observability/tempo/data:/tmp/tempo
     restart: unless-stopped
     logging: *default-logging
+    mem_limit: 1g
+    security_opt: *no-new-privs
     networks:
       - observability
     ports:
@@ -284,6 +317,8 @@ services:
     container_name: minio
     restart: unless-stopped
     logging: *default-logging
+    mem_limit: 1g
+    security_opt: *no-new-privs
     networks:
       - storage
     volumes:
@@ -303,6 +338,8 @@ services:
     container_name: nats
     restart: unless-stopped
     logging: *default-logging
+    mem_limit: 2g
+    security_opt: *no-new-privs
     networks:
       - backend-api
       - observability
