@@ -39,7 +39,19 @@ services:
   redis:
     image: ${REDIS_IMAGE}
     container_name: redis
-    command: redis-server /usr/local/etc/redis/redis.conf
+    command:
+      - redis-server
+      - /usr/local/etc/redis/redis.conf
+      - --requirepass
+      - ${CACHE_PASSWORD}
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --appendonly
+      - yes
+      - --appendfsync
+      - everysec
     volumes:
       - ./database/redis/redis.conf:/usr/local/etc/redis/redis.conf
     restart: unless-stopped
@@ -176,7 +188,19 @@ services:
   keydb:
     image: ${KEYDB_IMAGE}
     container_name: keydb
-    command: keydb-server /etc/keydb/keydb.conf
+    command:
+      - keydb-server
+      - /etc/keydb/keydb.conf
+      - --requirepass
+      - ${CACHE_PASSWORD}
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --appendonly
+      - yes
+      - --appendfsync
+      - everysec
     volumes:
       - ./database/keydb/keydb.conf:/etc/keydb/keydb.conf
     restart: unless-stopped
@@ -189,7 +213,19 @@ services:
   valkey:
     image: ${VALKEY_IMAGE}
     container_name: valkey
-    command: valkey-server /usr/local/etc/valkey/valkey.conf
+    command:
+      - valkey-server
+      - /usr/local/etc/valkey/valkey.conf
+      - --requirepass
+      - ${CACHE_PASSWORD}
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --appendonly
+      - yes
+      - --appendfsync
+      - everysec
     volumes:
       - ./database/valkey/valkey.conf:/usr/local/etc/valkey/valkey.conf
     restart: unless-stopped
